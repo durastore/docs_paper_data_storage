@@ -1,0 +1,56 @@
+# For a single word, run simulations at given colors and kmer lengths
+# decode them
+
+UNCORRECTED_ERRORS=true
+TIMEOUT=600
+N_REPLICATES=3
+COLORS="3 4 5 6"
+KMERS="5 6 7 8"
+SHIFTS="1"
+TEXT_ARG="-tf texts/poem1"
+BASE_FOLDER=simulated/poem1
+ERROR_FILE=category_error_rates.csv
+COUNTS_FILE=structure_counts_no_errors.csv
+
+
+if $UNCORRECTED_ERRORS
+then
+    echo uncorrected errors
+    CORR_TEXT=""
+    SIMFOLDERS="corrected_errors no_errors uncorrected_errors"
+else
+    echo no uncorrected errors
+    CORR_TEXT="--disable-uncorrected-errors"
+    SIMFOLDERS="corrected_errors no_errors"
+fi
+
+for SHIFT in $SHIFTS
+do
+    for COLOR in $COLORS
+    do
+        for KMER in $KMERS
+        do
+            OUTFOLDER=$BASE_FOLDER/C${COLOR}_K${KMER}/shift_${SHIFT}
+            mkdir -p $OUTFOLDER
+            echo python simulate_structures.py $TEXT_ARG --n-colors $COLOR --kmer-length $KMER --counts-file $COUNTS_FILE --error-file $ERROR_FILE -o $OUTFOLDER --n-replicates $N_REPLICATES $CORR_TEXT --shift $SHIFT
+            python simulate_structures.py $TEXT_ARG --n-colors $COLOR --kmer-length $KMER --counts-file $COUNTS_FILE --error-file $ERROR_FILE -o $OUTFOLDER --n-replicates $N_REPLICATES $CORR_TEXT --shift $SHIFT
+            # decode
+            for ENCODING in huffman zlib
+            do
+                DATA_FOLDER=$OUTFOLDER/$ENCODING/
+                for REPL_FOLDER in $DATA_FOLDER/*/
+                do
+                    for ERR_LEVEL in $SIMFOLDERS
+                    do
+                        ERR_FOLDER=$REPL_FOLDER/$ERR_LEVEL
+                        echo $ERR_FOLDER
+                        python decode_structures.py -i $ERR_FOLDER/counts.txt -o $ERR_FOLDER/normal --n-colors $COLOR -d $ENCODING --shift $SHIFT --timeout $TIMEOUT --scoring-scheme weighted
+                        python decode_structures.py -i $ERR_FOLDER/counts.txt -o $ERR_FOLDER/corrected --n-colors $COLOR -d $ENCODING --correct-errors --shift $SHIFT --timeout $TIMEOUT --scoring-scheme weighted
+                    done
+                done
+            done
+        done
+    done
+done
+echo python analyse_simulations.py -i $BASE_FOLDER $TEXT_ARG
+python analyse_simulations.py -i $BASE_FOLDER $TEXT_ARG
