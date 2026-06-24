@@ -81,7 +81,7 @@ def loc_to_img_crop(directory, loc_data_df_l, data_index, window_size, SPR, int_
     import os, errno
     import cv2
 
-    new_dir = directory + '\Images_for_prot_det'
+    new_dir = directory + '\Images_of_segmented_DCs'
     try:
         os.makedirs(new_dir)
     except OSError as e:
