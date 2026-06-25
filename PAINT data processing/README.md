@@ -17,7 +17,8 @@ The pipeline is built in Python and requires the following dependencies:
 The pipeline is executed via a central GUI, which provides access to four distinct processing workflows. Default values are provided for each adjustable parameter used during the respective processing steps.
 
 ### 1. Data Cropping (`DOCS_PAINT_data_crop.py`)
-* **Input files:** * Undrifted, aligned Exchange PAINT channel localization files (`.hdf5`)
+* **Input files:**
+  * Undrifted, aligned Exchange PAINT channel localization files (`.hdf5`)
   * Associated metadata (`.yaml`)
 * **Output files:**
   * Cropped, undrifted, aligned Exchange PAINT channel localization files (`.hdf5`)
@@ -26,7 +27,8 @@ The pipeline is executed via a central GUI, which provides access to four distin
 * **Description:** Removes non-relevant spatial regions from the datasets, drastically decreasing dataset sizes and processing times.
 
 ### 2. Carrier Segmentation (`DOCS_PAINT_data_segmentation.py`)
-* **Input files:** * Cropped Exchange PAINT channel localization file (`.h5`)
+* **Input files:**
+  * Cropped Exchange PAINT channel localization file (`.h5`)
   * Processing parameters file (`.csv`)
 * **Output files:**
   * Segmentation parameters file (`.csv`)
@@ -34,7 +36,8 @@ The pipeline is executed via a central GUI, which provides access to four distin
 * **Description:** Identifies individual data carriers in the Exchange PAINT data based on user-provided size thresholds and groups localizations from the different PAINT channels into ROIs centered around individual data carrier positions.
 
 ### 3. Site Localization Extraction (`DOCS_PAINT_data_site_loc_extract.py`)
-* **Input files:** * Segmentation parameters file (`.csv`)
+* **Input files:**
+  * Segmentation parameters file (`.csv`)
   * Segmented localization file (`.h5`)
 * **Output files:**
   * Processing parameters file (`.csv`)
@@ -44,7 +47,8 @@ The pipeline is executed via a central GUI, which provides access to four distin
 * **Description:** Filters and groups localizations from individual DCs into positions on DCs.
 
 ### 4. Result Visualization & Statistical Analysis (`DOCS_PAINT_data_result_vis.py`)
-* **Input files:** * Channel information file (`.csv`)
+* **Input files:**
+  * Channel information file (`.csv`)
   * Processed localization file (`.h5`)
 * **Output files:**
   * DC identity probability file (`.csv`)
