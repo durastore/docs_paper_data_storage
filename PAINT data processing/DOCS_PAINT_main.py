@@ -11,7 +11,7 @@ def process_main_gui():
                  ]
 
     layout = [[sg.Column(cols, element_justification='c', vertical_alignment="top")]]
-    window_main = sg.Window('PAINT data processing for Barcode project', layout, resizable=True)
+    window_main = sg.Window('PAINT data processing for DOCS project', layout, resizable=True)
 
     #
     while True:

@@ -81,7 +81,7 @@ def loc_to_img_crop(directory, loc_data_df_l, data_index, window_size, SPR, int_
     import os, errno
     import cv2
 
-    new_dir = directory + '\Images_for_prot_det'
+    new_dir = directory + '\Images_of_segmented_DCs'
     try:
         os.makedirs(new_dir)
     except OSError as e:
@@ -145,7 +145,7 @@ def loc_to_img_crop(directory, loc_data_df_l, data_index, window_size, SPR, int_
     return img_gs_file, img_blur, new_dir, loc_array_n
 
 #Function for creating aligned merged image of channels
-def img_merge_bc(gs_img_file_l, ch_color_l, channel_name_l, export_folder, index):
+def img_merge_dc(gs_img_file_l, ch_color_l, channel_name_l, export_folder, index):
     # import packages used
     import cv2
     import matplotlib as mpl
@@ -261,7 +261,7 @@ def centroid_calc(data):
     return centroid_l
 
 #Function to annotate points (Find external points -> name one as first -> annotate rest by using point by point dist
-def point_annot_bc(coor):
+def point_annot_dc(coor):
     # import packages used
     import numpy as np
     from copy import deepcopy
@@ -585,12 +585,12 @@ def pos_det (SPR, export,export_file_format, processing_dir, img_gs, img_color_f
                 xs, ys = zip(*box)
                 ax2.plot(xs, ys, linestyle='-.', color='cyan')
 
-            plt.savefig(processing_dir + '\Protein_detection_plot-' + str(index) +'.'+ export_file_format)
+            plt.savefig(processing_dir + '\DC_annotation_plot-' + str(index) +'.'+ export_file_format)
             plt.close()
 
     else:
 
-        ord_coor, dist_l, dist_tot = point_annot_bc(coor=filt_coor)
+        ord_coor, dist_l, dist_tot = point_annot_dc(coor=filt_coor)
         lin_score, v_l, v_n_l = lin_check(ann_spot_coor=ord_coor)
         dist_tot_nm = dist_tot * pix_nm_SPR
         dist_l_nm = [d*pix_nm_SPR for d in dist_l]
@@ -1202,18 +1202,18 @@ def PAINT_func_proc_main_gui():
 
     layout = [[sg.Column(left_col, element_justification='c'),
                sg.Column(right_col, element_justification='c', vertical_alignment="top")]]
-    window_single_site_occ = sg.Window('Single site occupancy calculation', layout, resizable=True)
+    window_dc_site_loc = sg.Window('DC site localization', layout, resizable=True)
 
     #
     while True:
-        event, values = window_single_site_occ.read()
+        event, values = window_dc_site_loc.read()
         if event == sg.WIN_CLOSED or event == 'Cancel':
-            window_single_site_occ.close()
+            window_dc_site_loc.close()
             break
 
         if event == 'Load data':
-            window_single_site_occ['OUTPUT'].update(value='Processing data' + '\n', append=True)
-            window_single_site_occ.refresh()
+            window_dc_site_loc['OUTPUT'].update(value='Processing data' + '\n', append=True)
+            window_dc_site_loc.refresh()
 
             try:
                 mag = int(values['mag'])
@@ -1244,17 +1244,17 @@ def PAINT_func_proc_main_gui():
                 processing_param_l = [mag, pix_nm, SPR,win_size,thr_min, thr_max,gauss_kernel,int_thr, spot_size_nm,site_n,
                                       site_d_l,site_d_std, d_thr_site_nm, lin_score_thr, dil_it_n,dil_kernel_size, offset_thr,eps_dbscan,crop_w_w,crop_w_h,gap_nm]
 
-                window_single_site_occ['OUTPUT'].update(value='Processing parameters loaded' + '\n', append=True)
-                window_single_site_occ.refresh()
+                window_dc_site_loc['OUTPUT'].update(value='Processing parameters loaded' + '\n', append=True)
+                window_dc_site_loc.refresh()
 
                 segmented_data_hdf = values['grouped_loc_file']
                 if len(segmented_data_hdf) == 0:
                     sg.Popup('Segmented data h5 file not provided.')
                     break
 
-                window_single_site_occ['OUTPUT'].update(value='Hdf5 file loaded:' + '\n', append=True)
-                window_single_site_occ['OUTPUT'].update(value=segmented_data_hdf + '\n', append=True)
-                window_single_site_occ.refresh()
+                window_dc_site_loc['OUTPUT'].update(value='Hdf5 file loaded:' + '\n', append=True)
+                window_dc_site_loc['OUTPUT'].update(value=segmented_data_hdf + '\n', append=True)
+                window_dc_site_loc.refresh()
 
                 img_size_csv_file = values['img_seg_csv']
                 if len(img_size_csv_file) == 0:
@@ -1262,9 +1262,9 @@ def PAINT_func_proc_main_gui():
                     break
 
                 else:
-                    window_single_site_occ['OUTPUT'].update(value='Csv file loaded:' + '\n', append=True)
-                    window_single_site_occ['OUTPUT'].update(value=segmented_data_hdf + '\n', append=True)
-                    window_single_site_occ.refresh()
+                    window_dc_site_loc['OUTPUT'].update(value='Csv file loaded:' + '\n', append=True)
+                    window_dc_site_loc['OUTPUT'].update(value=segmented_data_hdf + '\n', append=True)
+                    window_dc_site_loc.refresh()
 
 
                     with open(img_size_csv_file, newline='') as csvfile:
@@ -1312,8 +1312,8 @@ def PAINT_func_proc_main_gui():
                     spamwriter.writerow(['Crop window size', crop_w_w, crop_w_h])
                     spamwriter.writerow(['Window offset [nm]', gap_nm])
 
-                window_single_site_occ['OUTPUT'].update(value='Processing parameters exported' + '\n', append=True)
-                window_single_site_occ.refresh()
+                window_dc_site_loc['OUTPUT'].update(value='Processing parameters exported' + '\n', append=True)
+                window_dc_site_loc.refresh()
 
                 PAINT_func_proc_gui(channel_n=channel_n, channel_name_l=channel_name_l, segment_file_name=segmented_data_hdf, processing_param=processing_param_l, exp_folder=exp_folder)
 
@@ -1346,31 +1346,36 @@ def PAINT_func_proc_gui(channel_n, channel_name_l, segment_file_name, processing
     site_d_l_pix = [int(x/pix_nm_SPR) for x in site_d_l]
     offset_thr_pix = offset_thr/pix_nm_SPR
 
+    #Build the dynamic layout for the Rendering Frame FIRST
+    rendering_layout = []
+
+    for i in range(channel_n):
+        channel_name = channel_name_l[i]
+
+        # Add the color combo row
+        rendering_layout.append([
+            sg.Text('Color for rendering channel ' + channel_name + ':', size=(36, 1)),
+            sg.Combo(['cyan', 'blue', 'green', 'yellow', 'orange', 'magenta', 'purple', 'black'],
+                     default_value='cyan', enable_events=True, key=f'drop-{i}')
+        ])
+
+        # Add the intensity input row
+        rendering_layout.append([
+            sg.Text('Relative intensity of channel ' + str(channel_name) + ':', size=(36, 1)),
+            sg.InputText('1', key=f'rel_int_ch-{i}', size=(8, 1))
+        ])
+
     #
     left_col = [
         [sg.Frame('Processing parameters',
                   [
         [sg.Text('Number of probes to process:', size=(36, 1)),
          sg.InputText('', key='probe_n_limit', size=(8, 1))]
-                   ])]
+                   ])],
+        [sg.Frame('Rendering parameters', rendering_layout)]
     ]
 
-    for i in range(channel_n):
-        channel_name = channel_name_l[i]
-        left_col.append([sg.Text('Color for rendering channel ' +channel_name +':', size=(36, 1)),
-         sg.Combo(['cyan',
-                   'blue',
-                   'green',
-                   'yellow',
-                   'orange',
-                   'magenta',
-                   'purple',
-                   'black'], default_value='cyan', enable_events=True,
-                  key='drop-'+str(i))])
-        left_col.append([sg.Text('Relative intensity of channel ' +str(channel_name)+':', size=(36, 1)),
-         sg.InputText('1', key='rel_int_ch-'+str(i), size=(8, 1))])
-
-    left_col.append([sg.Frame('Processing parameters',
+    left_col.append([sg.Frame('Processing step visualization',
                   [[sg.Checkbox('Export images for position detection', size=(36, 1),
                      key='chk_exp_pos_det')],
         [sg.Checkbox('Export images for alignment', size=(36, 1),
@@ -1381,14 +1386,13 @@ def PAINT_func_proc_gui(channel_n, channel_name_l, segment_file_name, processing
         [sg.Button('Process data'), sg.Button('Cancel')]])])
 
     right_col = [
-        [sg.Frame('Output:', [[sg.Multiline("", size=(50, 30), key='OUTPUT')]])]
+        [sg.Frame('Output:', [[sg.Multiline("", size=(50, 10), key='OUTPUT')]])],
+        [sg.Frame('Progress:', [[sg.Multiline("", size=(50, 1), key='OUTPUT2', no_scrollbar=True)]])]
     ]
 
     layout = [[sg.Column(left_col, element_justification='c'),
                sg.Column(right_col, element_justification='c', vertical_alignment="top")]]
     window_data_proc = sg.Window('PAINT data processing', layout, resizable=True)
-
-
 
     while True:
         event, values = window_data_proc.read()
@@ -1422,7 +1426,8 @@ def PAINT_func_proc_gui(channel_n, channel_name_l, segment_file_name, processing
                 ch_name_l.append(channel_name_l[i])
 
             # Export channel information
-            window_data_proc['OUTPUT'].update(value='Exporting channel information')
+            window_data_proc['OUTPUT'].update(value='Exporting channel information'+ '\n',
+                            append=True)
             window_data_proc.refresh()
             with open(exp_folder + '/Processing_channel_info.csv', 'w', newline='') as csvfile:
 
@@ -1476,7 +1481,7 @@ def PAINT_func_proc_gui(channel_n, channel_name_l, segment_file_name, processing
                 for i in range(it_n):
 
                     pbar.update(1)
-                    window_data_proc['OUTPUT'].update(value=pbar)
+                    window_data_proc['OUTPUT2'].update(value=pbar)
                     window_data_proc.refresh()
                     ind = indeces[i]
                     str_index_l.append(ind)
@@ -1509,7 +1514,7 @@ def PAINT_func_proc_gui(channel_n, channel_name_l, segment_file_name, processing
                         loc_array_l.append(loc_array_n)
                         ch_img_l.append(img_gs)
 
-                    img_multi, img_multi_file, img_multi_gs, img_gs_file, rgb_img_l = img_merge_bc(gs_img_file_l=img_gs_file_l, ch_color_l=channel_color_l, channel_name_l=channel_name_l, export_folder=processing_dir, index=ind)
+                    img_multi, img_multi_file, img_multi_gs, img_gs_file, rgb_img_l = img_merge_dc(gs_img_file_l=img_gs_file_l, ch_color_l=channel_color_l, channel_name_l=channel_name_l, export_folder=processing_dir, index=ind)
                     str_clr_img_l.append(img_multi)
 
                     new_peak_list, dist_tot, dist_l_nm, lin_score = pos_det(SPR=SPR,

@@ -544,7 +544,7 @@ def PAINT_segment_gui(channel_n, rendering_param):
 
     right_col = [
         [sg.Frame('Output:', [[sg.Multiline("", size=(50, 10), key='OUTPUT')]])],
-        [sg.Frame('Progress:', [[sg.Multiline("", size=(50, 1), key='OUTPUT2')]])]
+        [sg.Frame('Progress:', [[sg.Multiline("", size=(50, 1), key='OUTPUT2', no_scrollbar=True)]])]
     ]
 
     layout = [[sg.Column(left_col, element_justification='c'),
@@ -608,13 +608,8 @@ def PAINT_segment_gui(channel_n, rendering_param):
                         break
 
                     else:
-                        # exp_loc_coor = values['chk_exp_loc_coor']
-                        # exp_loc_trace = values['chk_exp_loc_trace']
-                        # exp_loc_prec = values['chk_exp_loc_prec']
-                        # exp_img = values['chk_exp_img']
-                        # exp_loc_plots = values['chk_exp_loc_plot']
                         index_render = values['chk_index_render']
-                        # data_format = values['drop1']
+
 
                         if values['probe_n_limit'].isdigit() == False:
                             probe_proc_limit = False

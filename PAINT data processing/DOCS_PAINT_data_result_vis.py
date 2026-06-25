@@ -12,7 +12,7 @@ def _2gaussian(x, amp1,cen1,sigma1, amp2,cen2,sigma2):
     return amp1*(1/(sigma1*(np.sqrt(2*np.pi))))*(np.exp((-1.0/2.0)*(((x-cen1)/sigma1)**2))) + \
             amp2*(1/(sigma2*(np.sqrt(2*np.pi))))*(np.exp((-1.0/2.0)*(((x-cen2)/sigma2)**2)))
 
-def base_p_calc(data, channel_info, pos_n, fit_plot, import_lambda_l, export_folder):
+def base_p_calc(data, channel_info, pos_n, fit_plot, import_lambda_l, export_folder, gui_window):
     import matplotlib.pyplot as plt
     import seaborn as sns
     import pandas as pd
@@ -50,9 +50,9 @@ def base_p_calc(data, channel_info, pos_n, fit_plot, import_lambda_l, export_fol
         channel_name = ch_name_l[i]
         if import_lambda == True:
             ch_lambda_param = lambda_param_l[i]
-            a, b, c = em_algorithm_poisson_mixture_non_mixed(observations=ch, lambda_info_l= ch_lambda_param, fit_plot=fit_plot)
+            a, b, c = em_algorithm_poisson_mixture_non_mixed(observations=ch, lambda_info_l= ch_lambda_param, fit_plot=fit_plot, gui_window=gui_window)
         else:
-            a, b, c = em_algorithm_poisson_mixture(export_folder=export_folder,observations=ch, fit_plot=fit_plot, channel_name=channel_name)
+            a, b, c = em_algorithm_poisson_mixture(export_folder=export_folder,observations=ch, fit_plot=fit_plot, channel_name=channel_name, gui_window=gui_window)
         p_ch_l.append([a,b,c])
 
     if fit_plot==True:
@@ -68,7 +68,7 @@ def base_p_calc(data, channel_info, pos_n, fit_plot, import_lambda_l, export_fol
         plt.close()
     return p_ch_l
 
-def em_algorithm_poisson_mixture(channel_name, export_folder, observations, fit_plot, max_iterations=100, convergence_threshold=1e-6):
+def em_algorithm_poisson_mixture(channel_name, export_folder, observations, fit_plot,gui_window, max_iterations=100, convergence_threshold=1e-6):
     import numpy as np
     from scipy.stats import poisson
     """
@@ -158,11 +158,13 @@ def em_algorithm_poisson_mixture(channel_name, export_folder, observations, fit_
         ]
 
         if all(change < convergence_threshold for change in param_changes):
-            print(f"Converged after {iteration + 1} iterations")
+            gui_window['OUTPUT'].update(value="Fitting of "+channel_name+" converged after "+str({iteration + 1})+" iterations" + '\n', append=True)
+            gui_window.refresh()
             break
 
     if iteration == max_iterations - 1:
-        print(f"Reached maximum iterations ({max_iterations}) without convergence")
+        gui_window['OUTPUT'].update(value="Fitting of "+channel_name+" reached maximum iterations "+str({max_iterations})+" without convergence" + '\n', append=True)
+        gui_window.refresh()
 
     # Plot convergence history
     if fit_plot == True:
@@ -185,7 +187,7 @@ def lambda_import(lambda_csv_file):
 
     return channel_name_l, lambda_l
 
-def em_algorithm_poisson_mixture_non_mixed(observations, lambda_info_l, fit_plot, max_iterations=100, convergence_threshold=1e-6):
+def em_algorithm_poisson_mixture_non_mixed(observations, lambda_info_l, fit_plot,gui_window, max_iterations=100, convergence_threshold=1e-6):
     import numpy as np
     from scipy.stats import poisson
     """
@@ -268,11 +270,13 @@ def em_algorithm_poisson_mixture_non_mixed(observations, lambda_info_l, fit_plot
         ]
 
         if all(change < convergence_threshold for change in param_changes):
-            print(f"Converged after {iteration + 1} iterations")
+            gui_window['OUTPUT'].update(value="Fitting of "+channel_name+" converged after "+str({iteration + 1})+" iterations" + '\n', append=True)
+            gui_window.refresh()
             break
 
     if iteration == max_iterations - 1:
-        print(f"Reached maximum iterations ({max_iterations}) without convergence")
+        gui_window['OUTPUT'].update(value="Fitting of "+channel_name+" reached maximum iterations " +str({max_iterations}) +" without convergence" + '\n', append=True)
+        gui_window.refresh()
 
     # Plot convergence history
     if fit_plot==True:
@@ -319,8 +323,6 @@ def plot_mixture_fit(observations, lambda_on, lambda_off, p_on):
 
     max_obs = max(observations)
     bins = np.arange(-0.5, max_obs + 1.5, 1)  # Centered bins for integer counts
-    #sns.histplot(observations, alpha=0.6,binwidth=bins[1]-bins[0], kde=True, stat="probability", label='Observations')
-    #plt.hist(observations,bins=20, density=True, alpha=0.6, label='Observations')
     sns.histplot(observations, stat="probability", bins=20)
     # Generate x values for plotting the Poisson PMFs
     x = np.arange(0, max_obs + 1)
@@ -342,7 +344,7 @@ def plot_mixture_fit(observations, lambda_on, lambda_off, p_on):
     plt.grid(alpha=0.3)
     plt.show()
 
-def plot_mixture_fit_exp(observations, lambda_on, lambda_off, p_on, save_folder, channel_name):
+def plot_mixture_fit_exp(observations, lambda_on, lambda_off, p_on, save_folder, channel_name,gui_window):
     import matplotlib.pyplot as plt
     import numpy as np
     from scipy.stats import poisson
@@ -407,7 +409,9 @@ def plot_mixture_fit_exp(observations, lambda_on, lambda_off, p_on, save_folder,
 
         save_path = os.path.join(save_folder, 'channel-' + channel_name + '-loc-n-fit.csv')
         df_export.to_csv(save_path, index=False)
-        print(f"Plot data exported successfully to: {save_path}")
+        gui_window['OUTPUT'].update(value="Plot data exported successfully to: "+str({save_path}) + '\n',
+                                    append=True)
+        gui_window.refresh()
 
 def predict_pos_status(new_observations, lambda_on, lambda_off, p_on):
     from scipy.stats import poisson
@@ -650,17 +654,17 @@ def ch_to_code_conv_err_corr(pos_ch_states_l, pos_ch_states_p_l):
 
     return comp_pos_code_l, comp_pos_p_l
 
-def bc_code_p_calc(pos_code_l, pos_code_p_l):
+def dc_code_p_calc(pos_code_l, pos_code_p_l):
     import itertools
     import numpy as np
-    b_comb_name_l = [x for x in list(itertools.product(*pos_code_l))]
-    b_comb_p_l = [np.product(x) for x in list(itertools.product(*pos_code_p_l))]
-    sort_b_comb_l=sorted(zip(b_comb_name_l, b_comb_p_l), key=lambda x: x[1])[::-1]
-    sort_b_code_l = ["".join(x[0]) for x in sort_b_comb_l]
-    sort_b_code_p_l = [x[1] for x in sort_b_comb_l]
-    return sort_b_code_l, sort_b_code_p_l
+    dc_comb_name_l = [x for x in list(itertools.product(*pos_code_l))]
+    dc_comb_p_l = [np.product(x) for x in list(itertools.product(*pos_code_p_l))]
+    sort_dc_comb_l=sorted(zip(dc_comb_name_l, dc_comb_p_l), key=lambda x: x[1])[::-1]
+    sort_dc_code_l = ["".join(x[0]) for x in sort_dc_comb_l]
+    sort_dc_code_p_l = [x[1] for x in sort_dc_comb_l]
+    return sort_dc_code_l, sort_dc_code_p_l
 
-def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, bc_cand_n, bc_p_thr, gui_window, err_corr, non_mixed, import_lambda_l, fit_plot):
+def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, dc_cand_n, dc_p_thr, gui_window, err_corr, non_mixed, import_lambda_l, fit_plot):
     #import packages used
     import matplotlib.pyplot as plt
     import pandas as pd
@@ -709,7 +713,7 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
     
     #Calculate baseline probilities from channels
     str_loc_l = filtered_results_df['Str_loc'].values.tolist()
-    ch_base_p_l = base_p_calc(data=str_loc_l, channel_info=[ch_name_l,ch_color_l], pos_n=pos_n, fit_plot=fit_plot, import_lambda_l=import_lambda_l, export_folder=export_folder)
+    ch_base_p_l = base_p_calc(data=str_loc_l, channel_info=[ch_name_l,ch_color_l], pos_n=pos_n, fit_plot=fit_plot, import_lambda_l=import_lambda_l, export_folder=export_folder, gui_window=gui_window)
 
     #Export processing parameters
     ts = time.time()
@@ -719,9 +723,9 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
 
         spamwriter = csv.writer(csvfile, delimiter=',', quotechar='"',
                                 quoting=csv.QUOTE_MINIMAL)
-        row1 = ['# of predicted barcodes per probe retained',bc_cand_n]
+        row1 = ['# of predicted data carrier per probe retained',dc_cand_n]
         spamwriter.writerow(row1)
-        row2 = ['P cutoff for barcode retention', bc_p_thr]
+        row2 = ['P cutoff for data carrier retention', dc_p_thr]
         spamwriter.writerow(row2)
         row3 = ['Error correction channel used', err_corr]
         spamwriter.writerow(row3)
@@ -749,12 +753,12 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
     
 
     #list for exporting:
-    b_code_l = []
-    b_code_p_l = []
-    b_crop_img_l = []
-    b_error_corr_img_l = []
-    b_rgb_img_l = []
-    b_index_l = []
+    dc_code_l = []
+    dc_code_p_l = []
+    dc_crop_img_l = []
+    dc_error_corr_img_l = []
+    dc_rgb_img_l = []
+    dc_index_l = []
 
     if len(str_n_thr) !=0:
         sample_n = int(str_n_thr)
@@ -766,21 +770,21 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
     with tqdm(total=sample_n) as pbar:
         for i in range(sample_n):
             pbar.update(1)
-            gui_window['OUTPUT'].update(value=pbar)
+            gui_window['OUTPUT2'].update(value=pbar)
             gui_window.refresh()
 
             str_index = str_index_l[i]
-            b_index_l.append(str_index)
+            dc_index_l.append(str_index)
 
             str_crop_img = str_crop_img_l[i]
-            b_crop_img_l.append(str_crop_img)
+            dc_crop_img_l.append(str_crop_img)
 
             if err_corr == True:
                 str_err_corr_img = str_err_corr_img_l[i]
-                b_error_corr_img_l.append(str_err_corr_img)
+                dc_error_corr_img_l.append(str_err_corr_img)
             
             str_rgb_img = str_rgb_ch_img_l[i]
-            b_rgb_img_l.append(str_rgb_img)
+            dc_rgb_img_l.append(str_rgb_img)
 
             str_loc = str_loc_l[i]
             str_loc_n_l = [[],[],[],[],[]]
@@ -798,7 +802,7 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
                 str_ch_name_l.append(sort_ch_name_l)
                 str_ch_p_l.append(sort_ch_p_l)
 
-            thr_l = bc_cand_n
+            thr_l = dc_cand_n
             if non_mixed == True:
                 comp_pos_code_l, comp_pos_p_l = ch_to_code_conv_non_mixed(pos_ch_states_l=str_ch_name_l,
                                                                          pos_ch_states_p_l=str_ch_p_l)
@@ -809,57 +813,57 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
                 else:
                     comp_pos_code_l, comp_pos_p_l = ch_to_code_conv(pos_ch_states_l=str_ch_name_l, pos_ch_states_p_l=str_ch_p_l)
 
-            sort_b_code_l, sort_b_code_p_l = bc_code_p_calc(pos_code_l=comp_pos_code_l, pos_code_p_l=comp_pos_p_l)
+            sort_dc_code_l, sort_dc_code_p_l = dc_code_p_calc(pos_code_l=comp_pos_code_l, pos_code_p_l=comp_pos_p_l)
 
-            b_cd_l = sort_b_code_l[0:thr_l]
-            b_p_l = sort_b_code_p_l[0:thr_l]
-            b_code_l.append(b_cd_l)
-            b_code_p_l.append(b_p_l)
+            dc_cd_l = sort_dc_code_l[0:thr_l]
+            dc_p_l = sort_dc_code_p_l[0:thr_l]
+            dc_code_l.append(dc_cd_l)
+            dc_code_p_l.append(dc_p_l)
 
 
-    with open(export_folder + '/bc_extr_list-'+time_stamp+'.csv', 'w', newline='') as csvfile:
+    with open(export_folder + '/dc_extr_list-'+time_stamp+'.csv', 'w', newline='') as csvfile:
 
         spamwriter = csv.writer(csvfile, delimiter=',', quotechar='"',
                                 quoting=csv.QUOTE_MINIMAL)
-        extr_list = ['BC index']
+        extr_list = ['DC index']
         for i in range(thr_l):
-            extr_list = extr_list + ['BC_code_'+str(i), 'BC_P_' + str(i)]
+            extr_list = extr_list + ['DC_code_'+str(i), 'DC_P_' + str(i)]
         spamwriter.writerow(extr_list)
 
-        for i in range(len(b_index_l)):
-            str_index = b_index_l[i]
-            bc_code = b_code_l[i]
-            bc_code_p = b_code_p_l[i]
+        for i in range(len(dc_index_l)):
+            str_index = dc_index_l[i]
+            dc_code = dc_code_l[i]
+            dc_code_p = dc_code_p_l[i]
 
             extr_result_list = [str_index]
-            for j in range(len(bc_code)):
-                extr_result_list = extr_result_list + [bc_code[j],bc_code_p[j]]
+            for j in range(len(dc_code)):
+                extr_result_list = extr_result_list + [dc_code[j],dc_code_p[j]]
 
             spamwriter.writerow(extr_result_list)
 
 
-    b_code_l_filt_flat= []
-    for i in range(len(b_code_l)):
-        bc_l = b_code_l[i]
-        bc_p_l = b_code_p_l[i]
-        for j in range(len(bc_p_l)):
-            p = bc_p_l[j]
-            bc = bc_l[j]
+    dc_code_l_filt_flat= []
+    for i in range(len(dc_code_l)):
+        dc_l = dc_code_l[i]
+        dc_p_l = dc_code_p_l[i]
+        for j in range(len(dc_p_l)):
+            p = dc_p_l[j]
+            dc = dc_l[j]
             r=round(p*100)
-            if p >= bc_p_thr:
+            if p >= dc_p_thr:
                 for h in range(r):
-                    b_code_l_filt_flat.append(bc)
+                    dc_code_l_filt_flat.append(dc)
 
-    unique_bc_code_l = list(Counter(b_code_l_filt_flat).keys())
-    unique_bc_code_count_l = Counter(b_code_l_filt_flat).values()
-    results_l = sorted(zip(unique_bc_code_l, unique_bc_code_count_l), key=lambda x: x[1])[::-1]
+    unique_dc_code_l = list(Counter(dc_code_l_filt_flat).keys())
+    unique_dc_code_count_l = Counter(dc_code_l_filt_flat).values()
+    results_l = sorted(zip(unique_dc_code_l, unique_dc_code_count_l), key=lambda x: x[1])[::-1]
 
-    with open(export_folder + '/Joined_bc_list-'+time_stamp+'.csv', 'w', newline='') as csvfile:
+    with open(export_folder + '/Joined_dc_list-'+time_stamp+'.csv', 'w', newline='') as csvfile:
 
         spamwriter = csv.writer(csvfile, delimiter=',', quotechar='"',
                                 quoting=csv.QUOTE_MINIMAL)
         spamwriter.writerow(['Full list','','', 'Reduced list'])
-        spamwriter.writerow(['BC code','Frequency','','BC code','Frequency'])
+        spamwriter.writerow(['DC code','Frequency','','DC code','Frequency'])
 
         red_result_l = [x for  x in results_l if 'X' not in x[0]]
 
@@ -875,8 +879,8 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
         new_dir = export_folder + '/crop_img'
         sub_dir_l = []
 
-        for unique_bc_code in unique_bc_code_l:
-            sub_dir_l.append(new_dir + '/' +unique_bc_code)
+        for unique_dc_code in unique_dc_code_l:
+            sub_dir_l.append(new_dir + '/' +unique_dc_code)
 
         try:
             os.makedirs(new_dir)
@@ -887,12 +891,12 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
             if e.errno != errno.EEXIST:
                 raise
 
-        for i in range(len(b_code_l)):
-            barcode_l = b_code_l[i]
-            str_index = b_index_l[i]
-            crop_img = b_crop_img_l[i]
+        for i in range(len(dc_code_l)):
+            data_carrier_l = dc_code_l[i]
+            str_index = dc_index_l[i]
+            crop_img = dc_crop_img_l[i]
             if err_corr == True:
-                err_corr_img = b_error_corr_img_l[i]
+                err_corr_img = dc_error_corr_img_l[i]
             crop_img[crop_img > 255] = 255
             crop_img = crop_img.astype(np.uint8)
             if err_corr == True:
@@ -903,7 +907,7 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
                 img_err = Image.fromarray(err_corr_img)
             
             rgb_img_l2 =[]
-            rgb_img_l = b_rgb_img_l[i]
+            rgb_img_l = dc_rgb_img_l[i]
             for rgb_img in rgb_img_l:
                 rgb_img[rgb_img > 255] = 255
                 rgb_img = rgb_img.astype(np.uint8)
@@ -911,20 +915,20 @@ def dc_id_det(result_hdf, channel_info, export_crop, export_folder, str_n_thr, b
                 rgb_img = Image.fromarray(rgb_img)
                 rgb_img_l2.append(rgb_img)
 
-            for j in range(len(barcode_l)):
+            for j in range(len(data_carrier_l)):
 
-                barcode_code = barcode_l[j]
+                data_carrier_code = data_carrier_l[j]
 
-                if barcode_code in unique_bc_code_l:
-                    code_index = unique_bc_code_l.index(barcode_code)
-                    barcode_folder = sub_dir_l[code_index]
-                    img.save(barcode_folder + '/BC-' + str(str_index)  + '-' + str(j) + '-' + str(barcode_code) + '.png')
+                if data_carrier_code in unique_dc_code_l:
+                    code_index = unique_dc_code_l.index(data_carrier_code)
+                    data_carrier_folder = sub_dir_l[code_index]
+                    img.save(data_carrier_folder + '/DC-' + str(str_index)  + '-' + str(j) + '-' + str(data_carrier_code) + '.png')
                     if err_corr == True:
-                        img_err.save(barcode_folder + '/BC-' + str(str_index) + '-' + str(j) + '-' + str(barcode_code) + '-ERR-CH.png')
+                        img_err.save(data_carrier_folder + '/DC-' + str(str_index) + '-' + str(j) + '-' + str(data_carrier_code) + '-ERR-CH.png')
                     for h in range(len(rgb_img_l2)):
                         name = ch_name_l[h]
                         rgb_img = rgb_img_l2[h]
-                        rgb_img.save(barcode_folder + '/BC-' + str(str_index) + '-' + str(j) + '-' + str(barcode_code) +'-CH-'+name+ '.png')
+                        rgb_img.save(data_carrier_folder + '/DC-' + str(str_index) + '-' + str(j) + '-' + str(data_carrier_code) +'-CH-'+name+ '.png')
 
 def PAINT_func_res_plot_main_gui():
     # import modules used
@@ -951,9 +955,9 @@ def PAINT_func_res_plot_main_gui():
         [sg.Text('Processing subset of data (# of probes):', size=(36, 1)),
          sg.InputText(key='str_n_thr', size=(8, 1))],
         [sg.Text('Number of candidates to store per probe (1-x)', size=(36, 1)),
-         sg.InputText('1', key='bc_cand_n', size=(8, 1))],
+         sg.InputText('1', key='dc_cand_n', size=(8, 1))],
         [sg.Text('P cutoff for candidates (0.0-1.0)', size=(36, 1)),
-         sg.InputText('0.0', key='bc_p_thr', size=(8, 1))],
+         sg.InputText('0.0', key='dc_p_thr', size=(8, 1))],
         [sg.Checkbox('Non-mixed channel sites:', size=(36, 1),
                      key='chk_non_mixed')],
         [sg.Checkbox('Error correction channel used:', size=(36, 1),
@@ -963,8 +967,10 @@ def PAINT_func_res_plot_main_gui():
         [sg.Button('Load data'), sg.Button('Cancel')]
     ]
     right_col = [
-        [sg.Frame('Output:', [[sg.Multiline("", size=(50, 30), key='OUTPUT')]])]
+        [sg.Frame('Output:', [[sg.Multiline("", size=(50, 10), key='OUTPUT')]])],
+        [sg.Frame('Progress:', [[sg.Multiline("", size=(50, 1), key='OUTPUT2', no_scrollbar=True)]])]
     ]
+    
 
     layout = [[sg.Column(left_col, element_justification='c'),
                sg.Column(right_col, element_justification='c', vertical_alignment="top")]]
@@ -1032,12 +1038,12 @@ def PAINT_func_res_plot_main_gui():
                     window_result_vis.refresh()
                     
                 str_n_thr = values['str_n_thr']
-                bc_cand_n = int(values['bc_cand_n'])
-                bc_p_thr = float(values['bc_p_thr'])
+                dc_cand_n = int(values['dc_cand_n'])
+                dc_p_thr = float(values['dc_p_thr'])
                 err_corr = values['chk_err_corr']
                 non_mixed = values['chk_non_mixed']
                 fit_plot = values['chk_plot_fit']
-                dc_id_det(result_hdf=results_hdf, channel_info=channel_info_l, export_crop=export_crop, export_folder=exp_folder, str_n_thr=str_n_thr, bc_cand_n=bc_cand_n, bc_p_thr=bc_p_thr, gui_window=window_result_vis, err_corr = err_corr, non_mixed = non_mixed, import_lambda_l= import_lambda_l, fit_plot=fit_plot)
+                dc_id_det(result_hdf=results_hdf, channel_info=channel_info_l, export_crop=export_crop, export_folder=exp_folder, str_n_thr=str_n_thr, dc_cand_n=dc_cand_n, dc_p_thr=dc_p_thr, gui_window=window_result_vis, err_corr = err_corr, non_mixed = non_mixed, import_lambda_l= import_lambda_l, fit_plot=fit_plot)
 
                 window_result_vis['OUTPUT'].update(value='Results exported' + '\n', append=True)
                 window_result_vis.refresh()
