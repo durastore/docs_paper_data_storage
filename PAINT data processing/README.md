@@ -52,7 +52,7 @@ The pipeline is executed via a central GUI, which provides access to four distin
   * Processed localization file (`.h5`)
 * **Output files:**
   * DC identity probability file (`.csv`)
-  * DC code count file (e.g., `.csv` or `.txt`)
+  * DC code count file (`.csv`)
 * **Description:** Calculates the base probabilities required for decoding based on the data and determines DC identity based on a Bayesian probabilistic approach, and counts the occurrence of detected unique DC codes in the data.
 
 ## Usage
