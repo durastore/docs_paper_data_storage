@@ -59,7 +59,6 @@ python DOCS_PAINT_main.py
 ```
 =======
 =======
->>>>>>> 30817f02a4bebf370e0a0754f0b554c9e9c392d6
 DOCS-PAINT: DNA-PAINT Data Processing Pipeline
 
 Overview
