@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-<<<<<<< HEAD
 # DOCS-PAINT: DNA-PAINT Data Processing Pipeline
 
 ## Overview
@@ -144,9 +142,5 @@ To launch the pipeline, run the main script from your terminal:
 
 Bash
 python DOCS_PAINT_main.py
-
-<<<<<<< HEAD
->>>>>>> 30817f02a4bebf370e0a0754f0b554c9e9c392d6
 =======
->>>>>>> 30817f02a4bebf370e0a0754f0b554c9e9c392d6
 This will open the primary menu, allowing you to sequentially route your data through the cropping, segmentation, extraction, and processing workflows.
